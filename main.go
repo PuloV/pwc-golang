@@ -9,4 +9,5 @@ import (
 func main() {
 	crawler := pwc.CreateCrawler()
 	crawler.Start()
+	crawler.Wait()
 }

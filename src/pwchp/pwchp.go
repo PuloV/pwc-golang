@@ -10,12 +10,14 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type PwcHtmlParser struct {
-	domain  string
-	url     *url.URL
-	content string
+	domain             string
+	url                *url.URL
+	content            string
+	startedParsingTime time.Time
 }
 
 func generateUrl(link string) *url.URL {
@@ -30,6 +32,7 @@ func generateUrl(link string) *url.URL {
 
 func NewParser(link string) *PwcHtmlParser {
 	p := new(PwcHtmlParser)
+	p.startedParsingTime = time.Now()
 	p.url = generateUrl(link)
 	p.GetContent()
 	return p
@@ -66,7 +69,7 @@ func (p *PwcHtmlParser) GetAllTags(tag string) []string {
 
 func (p *PwcHtmlParser) GetAllPageUrls() []string {
 	rawLinks := p.GetAllTags("a")
-	re := regexp.MustCompile(`.*?href=('|")(.*?)('|").*`)
+	re := regexp.MustCompile(`.*? href=('|")(.*?)('|") .*`)
 
 	parsedHrefs := []string{}
 
@@ -75,7 +78,27 @@ func (p *PwcHtmlParser) GetAllPageUrls() []string {
 		parsedHref := p.parseHref(originalHref)
 		parsedHrefs = append(parsedHrefs, parsedHref)
 	}
-	return parsedHrefs
+
+	uniqueValues := map[string]bool{}
+	uniqueParsedHrefs := []string{}
+
+	checkBadHref := regexp.MustCompile(`(mailto:.*|.*javascript.*|.*\.jpg$|.*\.git$)`)
+
+	for _, href := range parsedHrefs {
+		isBadHref := checkBadHref.MatchString(href)
+
+		if urlValue, urlExists := uniqueValues[href]; !isBadHref && (!urlExists || !urlValue) {
+			uniqueValues[href] = true
+		}
+	}
+
+	for k := range uniqueValues {
+		if len(k) >= 3 {
+			uniqueParsedHrefs = append(uniqueParsedHrefs, k)
+		}
+	}
+
+	return uniqueParsedHrefs
 }
 
 func (p *PwcHtmlParser) parseHref(href string) string {
@@ -102,7 +125,7 @@ func (p *PwcHtmlParser) parseHref(href string) string {
 }
 
 func (p *PwcHtmlParser) GetValuableWords() []string {
-	tagTypes := []string{"strong", "b", "i", "a"}
+	tagTypes := []string{"strong", "b", "i", "a", "td"}
 
 	valuableWords := []string{}
 
@@ -142,4 +165,8 @@ func (p *PwcHtmlParser) GetValuableWords() []string {
 	}
 
 	return uniqueValuableWords
+}
+
+func (p *PwcHtmlParser) GetStartedParsingTime() time.Time {
+	return p.startedParsingTime
 }
