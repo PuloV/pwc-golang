@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
-	pwc.Start()
+	crawler := pwc.CreateCrawler()
+	crawler.Start()
 }
