@@ -16,6 +16,9 @@ type Pwc struct {
 	outgoingUrls chan string
 	bufferedChan chan string
 
+	maxUrslPingedPerBatch     int
+	currentUrslPingedPerBatch int
+
 	parsingUrls *sync.WaitGroup
 }
 
@@ -81,12 +84,11 @@ func (pwc *Pwc) crawl(url string) {
 	p := pwchp.NewParser(url)
 
 	logFoundData(p)
-
 	pwc.addUrlsToBeParsed(p.GetAllPageUrls())
 }
 
 func (pwc *Pwc) addDefaultStartPoints() {
-	defaultStartPoints := []string{"http://cars.bg"}
+	defaultStartPoints := []string{"http://mobile.bg", "http://cars.bg"}
 	pwc.addUrlsToBeParsed(defaultStartPoints)
 }
 
@@ -123,7 +125,7 @@ func logFoundData(p *pwchp.PwcHtmlParser) {
 
 	for _, word := range p.GetValuableWords() {
 		keyWord := fmt.Sprintf("\t - %s\n", word)
-		fmt.Println(keyWord)
+		// fmt.Println(keyWord)
 		if _, err = f.WriteString(string(keyWord)); err != nil {
 			panic(err)
 		}

@@ -69,7 +69,7 @@ func (p *PwcHtmlParser) GetAllTags(tag string) []string {
 
 func (p *PwcHtmlParser) GetAllPageUrls() []string {
 	rawLinks := p.GetAllTags("a")
-	re := regexp.MustCompile(`.*? href=('|")(.*?)('|") .*`)
+	re := regexp.MustCompile(`.*?href=('|")(.*?)('|").*`)
 
 	parsedHrefs := []string{}
 
@@ -125,7 +125,7 @@ func (p *PwcHtmlParser) parseHref(href string) string {
 }
 
 func (p *PwcHtmlParser) GetValuableWords() []string {
-	tagTypes := []string{"strong", "b", "i", "a", "td"}
+	tagTypes := []string{"strong", "b", "i", "a", "td", "h1", "h2", "h3", "h4", "h5", "title"}
 
 	valuableWords := []string{}
 
