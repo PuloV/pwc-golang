@@ -3,7 +3,7 @@
 package main
 
 import (
-	"pwc"
+	"github.com/PuloV/pwc-golang/src/pwc"
 )
 
 func main() {

@@ -1,2 +1,2 @@
-export GOPATH="$HOME/projects/golang/pwc-golang"
+export GOPATH="$HOME/go"
 go run main.go 2>&1

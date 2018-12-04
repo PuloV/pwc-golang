@@ -1,0 +1,8 @@
+package: .
+import:
+- package: github.com/jsoref/go-sql-driver-mysql
+  version: ~1.2.0
+- package: golang.org/x/text
+  version: ~0.3.0
+  subpackages:
+  - encoding/charmap

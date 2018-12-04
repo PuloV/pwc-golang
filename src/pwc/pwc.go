@@ -3,10 +3,11 @@ package pwc
 import (
 	"fmt"
 	// "os"
-	"pwcdb"
-	"pwchp"
 	"sync"
 	"time"
+
+	"github.com/PuloV/pwc-golang/src/pwcdb"
+	"github.com/PuloV/pwc-golang/src/pwchp"
 )
 
 type Pwc struct {
@@ -39,47 +40,47 @@ func CreateCrawler() *Pwc {
 }
 
 func (pwc *Pwc) Start() {
-  go func() {
-    for {
-      // check if there are urls that can be parsed
-      if len(pwc.urlsToBeParsed) > 0 {
-        select {
+	go func() {
+		for {
+			// check if there are urls that can be parsed
+			if len(pwc.urlsToBeParsed) > 0 {
+				select {
 
-        case url := <-pwc.bufferedChan: // a url is comming from the buffer channel => save it in the array of urls that needs to be parsed
-          // mark url in the wait group as not parsed
-          pwc.parsingUrls.Add(1)
-          pwc.urlsToBeParsed = append(pwc.urlsToBeParsed, url)
+				case url := <-pwc.bufferedChan: // a url is comming from the buffer channel => save it in the array of urls that needs to be parsed
+					// mark url in the wait group as not parsed
+					pwc.parsingUrls.Add(1)
+					pwc.urlsToBeParsed = append(pwc.urlsToBeParsed, url)
 
-        case pwc.outgoingUrls <- pwc.urlsToBeParsed[0]: // a url is taken from the url array and send to channel
-          pwc.urlsToBeParsed = pwc.urlsToBeParsed[1:]
-        }
-      } else {
-        select {
+				case pwc.outgoingUrls <- pwc.urlsToBeParsed[0]: // a url is taken from the url array and send to channel
+					pwc.urlsToBeParsed = pwc.urlsToBeParsed[1:]
+				}
+			} else {
+				select {
 
-        case url := <-pwc.bufferedChan: // there are no urls that can be parsed => waiting for a url from the buffer channel
-          // mark url in the wait group as not parsed
-          pwc.parsingUrls.Add(1)
-          pwc.urlsToBeParsed = append(pwc.urlsToBeParsed, url)
+				case url := <-pwc.bufferedChan: // there are no urls that can be parsed => waiting for a url from the buffer channel
+					// mark url in the wait group as not parsed
+					pwc.parsingUrls.Add(1)
+					pwc.urlsToBeParsed = append(pwc.urlsToBeParsed, url)
 
-        case <- time.After(5 * time.Second):
-          continue
-        }
-      }
-    }
-  }()
+				case <-time.After(5 * time.Second):
+					continue
+				}
+			}
+		}
+	}()
 
 	pwc.addDefaultStartPoints()
 
 	// for i := 0; i < 4; i++ {
-		go func(urls chan string) {
-			// endless loop for getting the urls
-			for {
-				url := <-urls
-				go func(url string) {
-					pwc.crawl(url)
-				}(url)
-			}
-		}(pwc.outgoingUrls)
+	go func(urls chan string) {
+		// endless loop for getting the urls
+		for {
+			url := <-urls
+			go func(url string) {
+				pwc.crawl(url)
+			}(url)
+		}
+	}(pwc.outgoingUrls)
 	// }
 }
 
@@ -125,7 +126,7 @@ func logFoundData(p *pwchp.PwcHtmlParser) {
 				if err := recover(); err != nil {
 					fmt.Printf("ERROR = \n", err)
 				}
-				}()
+			}()
 			pwcdb.InsetKeyWord(page_id, word)
 		}
 	}(p.GetValuableWords(), page_id)
