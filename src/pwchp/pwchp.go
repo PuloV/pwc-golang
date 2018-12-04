@@ -5,12 +5,14 @@ package pwchp
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 type PwcHtmlParser struct {
@@ -18,14 +20,15 @@ type PwcHtmlParser struct {
 	url                *url.URL
 	content            string
 	startedParsingTime time.Time
+	statusCode         int
 }
 
 func generateUrl(link string) *url.URL {
 
 	u, err := url.Parse(link)
 	if err != nil {
+		fmt.Println(err)
 		return new(url.URL)
-		log.Fatal(err)
 	}
 	return u
 }
@@ -44,21 +47,21 @@ func (p *PwcHtmlParser) GetPageUrl() string {
 }
 
 func (p *PwcHtmlParser) GetContent() {
-
 	resp, err := http.Get(p.GetPageUrl())
 
 	if err != nil {
+		fmt.Println(err)
 		return
-		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println(err)
 		return
-		log.Fatal(err)
 	}
 
+	p.statusCode = resp.StatusCode
 	p.content = string(body)
 }
 
@@ -104,8 +107,8 @@ func (p *PwcHtmlParser) GetAllPageUrls() []string {
 func (p *PwcHtmlParser) parseHref(href string) string {
 	u, err := url.Parse(href)
 	if err != nil {
+		fmt.Println(err)
 		return ""
-		log.Fatal(err)
 	}
 
 	if u.Host == "" {
@@ -133,6 +136,13 @@ func (p *PwcHtmlParser) GetValuableWords() []string {
 	for _, tagType := range tagTypes {
 		tags := p.GetAllTags(tagType)
 
+		// d, _ := goquery.NewDocumentFromReader(resp.Body)
+		// dh := d.Find("head")
+		// dc := dh.Find("meta[http-equiv]")
+		// c, _ := dc.Attr("content")
+		// a := d.Find("a")
+		// fmt.Println(a)
+
 		for _, tagHtml := range tags {
 			removeMainTag := regexp.MustCompile(fmt.Sprintf(`<%s.*?>(.*?)</%s>`, tagType, tagType))
 			removeHtmlTags := regexp.MustCompile(`<[^>]*>`)
@@ -144,6 +154,13 @@ func (p *PwcHtmlParser) GetValuableWords() []string {
 			// make the words with better view (lower and trim from spaces)
 			tagInnerHtml = strings.Trim(tagInnerHtml, " ")
 			tagInnerHtml = strings.ToLower(tagInnerHtml)
+
+			if !utf8.ValidString(tagInnerHtml) {
+				encodedInnerHtml, err := charmap.Windows1251.NewDecoder().String(tagInnerHtml)
+				if err != nil {
+					tagInnerHtml = encodedInnerHtml
+				}
+			}
 
 			valuableWords = append(valuableWords, tagInnerHtml)
 		}
@@ -169,4 +186,8 @@ func (p *PwcHtmlParser) GetValuableWords() []string {
 
 func (p *PwcHtmlParser) GetStartedParsingTime() time.Time {
 	return p.startedParsingTime
+}
+
+func (p *PwcHtmlParser) GetStatusCode() int {
+	return p.statusCode
 }
