@@ -8,4 +8,3 @@ Pulov's Web Crawler - Work In Progress
 3. Run the `run.sh` or the `go run main.go`
 
 __Note:__ In order to debug with VSCode, check the `.vscode/*.json` files.
-/home/pulov/go/src/github.com/PuloV/pwc-golang/main.go

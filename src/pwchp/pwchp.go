@@ -10,9 +10,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
-
-	"golang.org/x/text/encoding/charmap"
 )
 
 type PwcHtmlParser struct {
@@ -39,6 +36,10 @@ func NewParser(link string) *PwcHtmlParser {
 	p.url = generateUrl(link)
 	p.GetContent()
 	return p
+}
+
+func (p *PwcHtmlParser) GetDomain() string {
+	return p.url.Hostname()
 }
 
 func (p *PwcHtmlParser) GetPageUrl() string {
@@ -154,13 +155,6 @@ func (p *PwcHtmlParser) GetValuableWords() []string {
 			// make the words with better view (lower and trim from spaces)
 			tagInnerHtml = strings.Trim(tagInnerHtml, " ")
 			tagInnerHtml = strings.ToLower(tagInnerHtml)
-
-			if !utf8.ValidString(tagInnerHtml) {
-				encodedInnerHtml, err := charmap.Windows1251.NewDecoder().String(tagInnerHtml)
-				if err != nil {
-					tagInnerHtml = encodedInnerHtml
-				}
-			}
 
 			valuableWords = append(valuableWords, tagInnerHtml)
 		}

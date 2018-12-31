@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/PuloV/pwc-golang/src/pwcdb"
+	"github.com/PuloV/pwc-golang/src/model"
 	"github.com/PuloV/pwc-golang/src/pwchp"
 )
 
@@ -115,23 +115,36 @@ func (pwc *Pwc) addUrlToBeParsed(url string) {
 
 func logFoundData(p *pwchp.PwcHtmlParser) {
 	mutex.Lock()
+	defer mutex.Unlock()
 
 	fmt.Printf("\n - the url %s [%d] was parsed for %s \n", p.GetPageUrl(), p.GetStatusCode(), time.Since(p.GetStartedParsingTime()))
+	page := model.Page{
+		URL:          model.ConvertToUTF8(p.GetPageUrl()),
+		Domain:       model.ConvertToUTF8(p.GetDomain()),
+		ResponseCode: uint(p.GetStatusCode()),
+		LoadTime:     uint(time.Since(p.GetStartedParsingTime()).Seconds())}
+	pageError := page.Save()
 
-	page_id := pwcdb.InsertPage(p.GetPageUrl(), p.GetStatusCode(), time.Since(p.GetStartedParsingTime()).Seconds())
+	if pageError != nil {
+		fmt.Printf("ERROR = \n", pageError)
+		return
+	}
 
-	go func(urls []string, page_id int64) {
+	go func(urls []string, pageId uint) {
 		for _, word := range p.GetValuableWords() {
 			defer func() {
 				if err := recover(); err != nil {
 					fmt.Printf("ERROR = \n", err)
 				}
 			}()
-			pwcdb.InsetKeyWord(page_id, word)
-		}
-	}(p.GetValuableWords(), page_id)
 
-	mutex.Unlock()
+			keyword := model.KeyWord{
+				PageID:  pageId,
+				Weight:  0,
+				KeyWord: model.ConvertToUTF8(word)}
+			keyword.Save()
+		}
+	}(p.GetValuableWords(), page.ID)
 }
 
 func (p *Pwc) Wait() {

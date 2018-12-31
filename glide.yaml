@@ -6,3 +6,7 @@ import:
   version: ~0.3.0
   subpackages:
   - encoding/charmap
+- package: github.com/jinzhu/gorm
+  version: ^1.9.2
+  subpackages:
+  - dialects/mysql
